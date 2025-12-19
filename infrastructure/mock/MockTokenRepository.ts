@@ -134,5 +134,34 @@ export class MockTokenRepository implements TokenRepository {
       callbacks.forEach((cb) => cb(updatedToken));
     }
   }
+
+  /**
+   * Increment total tokens when a new appointment is created
+   */
+  async incrementTotalTokens(doctorId: string, clinicId: string): Promise<void> {
+    const key = this.getKey(doctorId, clinicId);
+    const token = this.tokenState[key];
+
+    if (token) {
+      token.totalTokens += 1;
+      token.lastUpdated = new Date();
+
+      // Notify all subscribers
+      const callbacks = this.callbacks.get(key);
+      if (callbacks) {
+        const updatedToken = { ...token };
+        callbacks.forEach((cb) => cb(updatedToken));
+      }
+    } else {
+      // Create new token state if it doesn't exist
+      this.tokenState[key] = {
+        doctorId,
+        clinicId,
+        currentToken: 0,
+        totalTokens: 1,
+        lastUpdated: new Date(),
+      };
+    }
+  }
 }
 

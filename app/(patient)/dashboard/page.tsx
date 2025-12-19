@@ -18,6 +18,7 @@ export default function DashboardPage() {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
+  console.log("🚀 ~ DashboardPage ~ appointments:", appointments)
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -27,22 +28,25 @@ export default function DashboardPage() {
       const isAuth = await authRepo.isAuthenticated();
 
       if (!isAuth) {
-        router.push("/auth/login?redirect=/dashboard");
+        router.push("/login?redirect=/dashboard");
         return;
       }
 
       const currentUser = await authRepo.getCurrentUser();
       if (!currentUser) {
-        router.push("/auth/login");
+        router.push("/login");
         return;
       }
 
       setUser(currentUser);
+      console.log("🚀 ~ DashboardPage ~ currentUser:", currentUser)
 
       const appointmentRepo = RepositoryFactory.getAppointmentRepository();
+      console.log("🚀 ~ DashboardPage ~ appointmentRepo:", appointmentRepo)
       const userAppointments = await appointmentRepo.getAppointmentsByUser(
         currentUser.id
       );
+      console.log("🚀 ~ DashboardPage ~ userAppointments:", userAppointments)
       setAppointments(userAppointments);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load dashboard");
@@ -73,11 +77,13 @@ export default function DashboardPage() {
   const upcomingAppointments = appointments.filter(
     (a) => a.status === AppointmentStatus.UPCOMING
   );
+  console.log("🚀 ~ DashboardPage ~ upcomingAppointments:", upcomingAppointments)
   const pastAppointments = appointments.filter(
     (a) =>
       a.status === AppointmentStatus.COMPLETED ||
       a.status === AppointmentStatus.CANCELLED
   );
+  console.log("🚀 ~ DashboardPage ~ pastAppointments:", pastAppointments)
 
   if (isLoading) {
     return (
@@ -150,7 +156,7 @@ export default function DashboardPage() {
                         <div>
                           <p className="text-sm text-gray-500 mb-1">Token</p>
                           <p className="text-2xl font-bold text-primary-600">
-                            {appointment.tokenNumber}
+                            {appointment.toekn_number}
                           </p>
                         </div>
                         {getStatusBadge(appointment.status)}
@@ -173,8 +179,8 @@ export default function DashboardPage() {
                         <div>
                           <p className="text-gray-500">Time</p>
                           <p className="font-semibold text-gray-900">
-                            {appointment.timeSlot.startTime} -{" "}
-                            {appointment.timeSlot.endTime}
+                            {/* {appointment.timeSlot.startTime} -{" "}
+                            {appointment.timeSlot.endTime} */}
                           </p>
                         </div>
                       </div>

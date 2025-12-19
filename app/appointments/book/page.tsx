@@ -12,17 +12,15 @@ import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import RepositoryFactory from "@/lib/repositories";
 import { Doctor } from "@/domain/entities/Doctor";
-import { Clinic } from "@/domain/entities/Clinic";
+import { AppointmentStatus } from "@/domain/entities/Appointment";
 import { PatientDetails } from "@/types/patient";
 
 export default function BookAppointmentPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const doctorId = searchParams.get("doctorId");
-  const clinicId = searchParams.get("clinicId");
 
   const [doctor, setDoctor] = useState<Doctor | null>(null);
-  const [clinic, setClinic] = useState<Clinic | null>(null);
   const [patientDetails, setPatientDetails] = useState<PatientDetails>({
     name: "",
     age: 0,
@@ -43,51 +41,29 @@ export default function BookAppointmentPage() {
     try {
       setIsLoading(true);
       const clinicRepo = RepositoryFactory.getClinicRepository();
-      const [doctorData, clinicData] = await Promise.all([
-        clinicRepo.getDoctorById(doctorId!),
-        clinicRepo.getClinicById(clinicId!),
-      ]);
+      const doctorData = await clinicRepo.getDoctorById(doctorId!);
 
-      if (!doctorData || !clinicData) {
-        setError("Doctor or clinic not found");
+      if (!doctorData) {
+        setError("Doctor not found");
         return;
       }
 
       setDoctor(doctorData);
-      setClinic(clinicData);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load data");
     } finally {
       setIsLoading(false);
     }
-  }, [doctorId, clinicId]);
+  }, [doctorId]);
 
   useEffect(() => {
-    if (!doctorId || !clinicId) {
-      setError("Doctor and clinic information is required");
+    if (!doctorId) {
+      setError("Doctor information is required");
       setIsLoading(false);
       return;
     }
     loadData();
-  }, [doctorId, clinicId, loadData]);
-
-  /**
-   * Generate token number for the appointment
-   * Calculates the next available token based on current token state
-   */
-  const generateTokenNumber = async (): Promise<number> => {
-    if (!doctor || !clinic) {
-      throw new Error("Doctor or clinic information is missing");
-    }
-
-    const tokenRepo = RepositoryFactory.getTokenRepository();
-    const tokenState = await tokenRepo.getCurrentToken(doctor.id, clinic.id);
-    
-    // Generate next token number (increment from total tokens)
-    const nextToken = tokenState.totalTokens + 1;
-    return nextToken;
-  };
-
+  }, [doctorId, loadData]);
 
   /**
    * Validate patient details form
@@ -115,56 +91,33 @@ export default function BookAppointmentPage() {
   };
 
   /**
-   * Confirm booking and generate token number
+   * Confirm booking
    * This function handles the complete booking flow:
    * 1. Validates patient details
-   * 2. Generates token number
-   * 3. Creates appointment for today
-   * 4. Shows token number in modal
+   * 2. Creates appointment for today (backend generates token)
+   * 3. Shows token number in modal
    */
   const confirmBooking = async () => {
     // Validation
-    if (!doctor || !clinic) {
-      setError("Doctor or clinic information is missing");
+    if (!doctor) {
+      setError("Doctor information is missing");
       return;
     }
 
     if (!validatePatientDetails()) {
       return;
     }
-
     try {
       setIsSubmitting(true);
       setError(null);
 
-      // Generate token number
-      const generatedToken = await generateTokenNumber();
-      setTokenNumber(generatedToken);
-
       // Get today's date
       const today = new Date().toISOString().split("T")[0];
-      
-      // Calculate estimated time slot based on token number
-      // Time is allocated based on token number (assuming 15 minutes per patient)
-      const tokenRepo = RepositoryFactory.getTokenRepository();
-      const currentTokenState = await tokenRepo.getCurrentToken(doctor.id, clinic.id);
-      const tokensAhead = Math.max(0, generatedToken - currentTokenState.currentToken);
-      const estimatedMinutes = tokensAhead * 15;
-      
-      // Calculate time slot starting from clinic opening time
-      const [openHour, openMin] = clinic.operatingHours.open.split(":").map(Number);
-      const totalMinutes = openHour * 60 + openMin + estimatedMinutes;
-      const startHour = Math.floor(totalMinutes / 60);
-      const startMin = totalMinutes % 60;
-      const endHour = Math.floor((totalMinutes + 15) / 60);
-      const endMin = (totalMinutes + 15) % 60;
-
-      const startTime = `${String(startHour).padStart(2, "0")}:${String(startMin).padStart(2, "0")}`;
-      const endTime = `${String(endHour).padStart(2, "0")}:${String(endMin).padStart(2, "0")}`;
 
       // Check if user is authenticated (for linking to user account)
       const authRepo = RepositoryFactory.getAuthRepository();
       const isAuth = await authRepo.isAuthenticated();
+      console.log("🚀 ~ confirmBooking ~ isAuth:", isAuth)
       let userId = "guest";
 
       if (isAuth) {
@@ -174,29 +127,30 @@ export default function BookAppointmentPage() {
         }
       }
 
-      // Create appointment
+      // Create appointment (backend will generate token number)
       const appointmentRepo = RepositoryFactory.getAppointmentRepository();
       const appointment = await appointmentRepo.createAppointment({
         userId: userId,
         doctorId: doctor.id,
-        clinicId: clinic.id,
         date: today,
         timeSlot: {
-          startTime: startTime,
-          endTime: endTime,
+          startTime: "",
+          endTime: "",
         },
-        tokenNumber: generatedToken,
-        status: "upcoming" as any,
+        tokenNumber: 0, // Will be generated by backend
+        status: AppointmentStatus.UPCOMING,
+        patientName: patientDetails.name, // maps to patient_name
+        patientPhone: patientDetails.phoneNumber, // maps to patient_phone
+        patientAge: patientDetails.age, // maps to patient_age
+        patientGender: patientDetails.gender, // maps to patient_gender
+        patientNotes: patientDetails.medicalHistory || undefined, // maps to patient_notes
+        appointmentMode: "token",
       });
-
-      // Update token repository total tokens count
-      const tokenRepoInstance = RepositoryFactory.getTokenRepository();
-      if (tokenRepoInstance && typeof (tokenRepoInstance as any).incrementTotalTokens === 'function') {
-        await (tokenRepoInstance as any).incrementTotalTokens(doctor.id, clinic.id);
-      }
-
-      // Store appointment ID for navigation
+      
+      console.log("🚀 ~ confirmBooking ~ appointment:", appointment)
+      // Store appointment ID and token number for navigation
       setAppointmentId(appointment.id);
+      setTokenNumber(appointment.tokenNumber);
 
       // Show token confirmation modal
       setShowTokenModal(true);
@@ -233,13 +187,13 @@ export default function BookAppointmentPage() {
     );
   }
 
-  if (error || !doctor || !clinic) {
+  if (error || !doctor) {
     return (
       <div className="flex flex-col min-h-screen">
         <Header />
         <main className="flex-1 flex items-center justify-center">
           <ErrorState
-            message={error || "Doctor or clinic not found"}
+            message={error || "Doctor not found"}
             onRetry={loadData}
           />
         </main>
@@ -298,16 +252,12 @@ export default function BookAppointmentPage() {
 
                 <div className="space-y-2 text-sm border-t border-gray-200 pt-4">
                   <div className="flex justify-between">
-                    <span className="text-gray-500">Room</span>
-                    <span className="font-semibold">{doctor.roomNumber}</span>
-                  </div>
-                  <div className="flex justify-between">
                     <span className="text-gray-500">Fee</span>
                     <span className="font-semibold">₹{doctor.consultationFee}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-500">Clinic</span>
-                    <span className="font-semibold text-right">{clinic.name}</span>
+                    <span className="text-gray-500">Experience</span>
+                    <span className="font-semibold">{doctor.experience} years</span>
                   </div>
                 </div>
               </Card>
@@ -520,8 +470,7 @@ export default function BookAppointmentPage() {
               <div className="space-y-1 text-sm text-gray-600">
                 <p><strong>Doctor:</strong> {doctor?.name}</p>
                 <p><strong>Specialization:</strong> {doctor?.specialization}</p>
-                <p><strong>Room:</strong> {doctor?.roomNumber}</p>
-                <p><strong>Clinic:</strong> {clinic?.name}</p>
+                <p><strong>Qualification:</strong> {doctor?.qualification}</p>
               </div>
             </div>
 

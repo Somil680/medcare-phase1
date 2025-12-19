@@ -14,5 +14,6 @@ export interface TokenRepository {
     clinicId: string,
     callback: (token: Token) => void
   ): () => void; // Returns unsubscribe function
+  incrementTotalTokens?(doctorId: string, clinicId: string): Promise<void>; // Optional method for incrementing tokens
 }
 

@@ -25,7 +25,7 @@ export default function HomePage() {
                     Book Appointment
                   </Button>
                 </Link>
-                <Link href="/auth/login">
+                <Link href="/login">
                   <Button variant="outline" size="lg">
                     Sign In
                   </Button>

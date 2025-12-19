@@ -153,7 +153,7 @@ export default function DoctorsPage() {
                       </div>
                     </div>
 
-                    <Link href={`/appointments/book?doctorId=${doctor.id}&clinicId=${doctor.clinicId}`}>
+                    <Link href={`/appointments/book?doctorId=${doctor.id}`}>
                       <Button variant="primary" className="w-full">
                         Book Appointment
                       </Button>

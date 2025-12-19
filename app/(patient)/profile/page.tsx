@@ -26,13 +26,13 @@ export default function ProfilePage() {
       const isAuth = await authRepo.isAuthenticated();
 
       if (!isAuth) {
-        router.push("/auth/login?redirect=/patient/profile");
+        router.push("/login?redirect=/patient/profile");
         return;
       }
 
       const currentUser = await authRepo.getCurrentUser();
       if (!currentUser) {
-        router.push("/auth/login");
+        router.push("/login");
         return;
       }
 
@@ -139,7 +139,7 @@ export default function ProfilePage() {
               <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
                 <p className="text-sm text-yellow-800">
                   <strong>Note:</strong> This is a mock profile. In production,
-                  you'll be able to edit your information here.
+                  you`ll be able to edit your information here.
                 </p>
               </div>
 

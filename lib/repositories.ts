@@ -8,13 +8,26 @@ import { MockClinicRepository } from "@/infrastructure/mock/MockClinicRepository
 import { MockAppointmentRepository } from "@/infrastructure/mock/MockAppointmentRepository";
 import { MockTokenRepository } from "@/infrastructure/mock/MockTokenRepository";
 
+import { SupabaseAuthRepository } from "@/infrastructure/supabase/SupabaseAuthRepository";
+import { SupabaseClinicRepository } from "@/infrastructure/supabase/SupabaseClinicRepository";
+import { SupabaseAppointmentRepository } from "@/infrastructure/supabase/SupabaseAppointmentRepository";
+import { SupabaseTokenRepository } from "@/infrastructure/supabase/SupabaseTokenRepository";
+
 /**
  * Repository factory
  * Centralized place to get repository instances
  * 
- * Future: Replace mock implementations with real backend implementations
+ * Automatically uses Supabase if environment variables are set,
+ * otherwise falls back to mock implementations
  */
 class RepositoryFactory {
+  private static useSupabase(): boolean {
+    return !!(
+      process.env.NEXT_PUBLIC_SUPABASE_URL &&
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    );
+  }
+
   private static authRepository: AuthRepository | null = null;
   private static clinicRepository: ClinicRepository | null = null;
   private static appointmentRepository: AppointmentRepository | null = null;
@@ -22,28 +35,36 @@ class RepositoryFactory {
 
   static getAuthRepository(): AuthRepository {
     if (!this.authRepository) {
-      this.authRepository = new MockAuthRepository();
+      this.authRepository = this.useSupabase()
+        ? new SupabaseAuthRepository()
+        : new MockAuthRepository();
     }
     return this.authRepository;
   }
 
   static getClinicRepository(): ClinicRepository {
     if (!this.clinicRepository) {
-      this.clinicRepository = new MockClinicRepository();
+      this.clinicRepository = this.useSupabase()
+        ? new SupabaseClinicRepository()
+        : new MockClinicRepository();
     }
     return this.clinicRepository;
   }
 
   static getAppointmentRepository(): AppointmentRepository {
     if (!this.appointmentRepository) {
-      this.appointmentRepository = new MockAppointmentRepository();
+      this.appointmentRepository = this.useSupabase()
+        ? new SupabaseAppointmentRepository()
+        : new MockAppointmentRepository();
     }
     return this.appointmentRepository;
   }
 
   static getTokenRepository(): TokenRepository {
     if (!this.tokenRepository) {
-      this.tokenRepository = new MockTokenRepository();
+      this.tokenRepository = this.useSupabase()
+        ? new SupabaseTokenRepository()
+        : new MockTokenRepository();
     }
     return this.tokenRepository;
   }

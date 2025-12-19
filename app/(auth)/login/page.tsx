@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
@@ -16,6 +16,21 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [isEmail, setIsEmail] = useState(false);
+  const [isSupabase, setIsSupabase] = useState(false);
+
+  // Check if Supabase is configured
+  useEffect(() => {
+    const hasSupabase =
+      !!process.env.NEXT_PUBLIC_SUPABASE_URL &&
+      !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    setIsSupabase(hasSupabase);
+  }, []);
+
+  // Detect if input is email or phone
+  useEffect(() => {
+    setIsEmail(phoneOrEmail.includes("@"));
+  }, [phoneOrEmail]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -23,14 +38,25 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
+      // Validate email login requires password
+      if (isEmail && !password) {
+        setError("Password is required for email login");
+        setIsLoading(false);
+        return;
+      }
+
       const authRepo = RepositoryFactory.getAuthRepository();
-      await authRepo.login(phoneOrEmail, password);
+      await authRepo.login(phoneOrEmail, password || undefined);
       
       // Check for redirect parameter
       const redirect = searchParams.get("redirect");
       router.push(redirect || "/dashboard");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Login failed");
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Login failed. Please check your credentials."
+      );
     } finally {
       setIsLoading(false);
     }
@@ -60,16 +86,20 @@ export default function LoginPage() {
                 htmlFor="phoneOrEmail"
                 className="block text-sm font-medium text-gray-700 mb-1"
               >
-                Phone or Email
+                {isEmail ? "Email" : "Phone or Email"}
               </label>
               <input
                 id="phoneOrEmail"
-                type="text"
+                type={isEmail ? "email" : "text"}
                 value={phoneOrEmail}
                 onChange={(e) => setPhoneOrEmail(e.target.value)}
                 required
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                placeholder="john.doe@example.com or +1 (555) 111-2222"
+                placeholder={
+                  isEmail
+                    ? "your.email@example.com"
+                    : "your.email@example.com or +1 (555) 111-2222"
+                }
               />
             </div>
 
@@ -78,16 +108,29 @@ export default function LoginPage() {
                 htmlFor="password"
                 className="block text-sm font-medium text-gray-700 mb-1"
               >
-                Password (Optional - Mock)
+                Password {isEmail && <span className="text-red-500">*</span>}
+                {!isEmail && !isSupabase && (
+                  <span className="text-gray-500 text-xs">(Optional - Mock)</span>
+                )}
               </label>
               <input
                 id="password"
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                required={isEmail && isSupabase}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                placeholder="Password (not required for mock)"
+                placeholder={
+                  isEmail
+                    ? "Enter your password"
+                    : "Password (required for email login)"
+                }
               />
+              {isEmail && (
+                <p className="mt-1 text-xs text-gray-500">
+                  Password is required for email login
+                </p>
+              )}
             </div>
 
             <Button
@@ -95,19 +138,34 @@ export default function LoginPage() {
               variant="primary"
               className="w-full"
               isLoading={isLoading}
+              disabled={isEmail && !password && isSupabase}
             >
               Sign In
             </Button>
           </form>
 
-          <div className="mt-6 text-center text-sm text-gray-600">
-            <p className="mb-2">Mock Login - Try these credentials:</p>
-            <p className="font-mono text-xs bg-gray-100 p-2 rounded">
-              john.doe@example.com
-              <br />
-              or
-              <br />
-              +1 (555) 111-2222
+          {!isSupabase && (
+            <div className="mt-6 text-center text-sm text-gray-600">
+              <p className="mb-2">Mock Login - Try these credentials:</p>
+              <p className="font-mono text-xs bg-gray-100 p-2 rounded">
+                john.doe@example.com
+                <br />
+                or
+                <br />
+                +1 (555) 111-2222
+              </p>
+            </div>
+          )}
+
+          <div className="mt-6 text-center">
+            <p className="text-sm text-gray-600 mb-2">
+              Don&apos;t have an account?{" "}
+              <Link
+                href="/signup"
+                className="text-primary-600 hover:text-primary-700 font-medium"
+              >
+                Sign up
+              </Link>
             </p>
           </div>
 

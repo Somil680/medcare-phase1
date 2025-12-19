@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -12,7 +12,6 @@ import { Footer } from "@/components/layout/Footer";
 import RepositoryFactory from "@/lib/repositories";
 import { Appointment, AppointmentStatus } from "@/domain/entities/Appointment";
 import { Doctor } from "@/domain/entities/Doctor";
-import { Clinic } from "@/domain/entities/Clinic";
 import { Token } from "@/domain/entities/Token";
 
 export default function AppointmentDetailsPage() {
@@ -22,38 +21,11 @@ export default function AppointmentDetailsPage() {
 
   const [appointment, setAppointment] = useState<Appointment | null>(null);
   const [doctor, setDoctor] = useState<Doctor | null>(null);
-  const [clinic, setClinic] = useState<Clinic | null>(null);
   const [token, setToken] = useState<Token | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    loadData();
-  }, [appointmentId]);
-
-  useEffect(() => {
-    if (!appointment) return;
-
-    const tokenRepo = RepositoryFactory.getTokenRepository();
-    const unsubscribe = tokenRepo.subscribeToTokenUpdates(
-      appointment.doctorId,
-      appointment.clinicId,
-      (updatedToken) => {
-        setToken(updatedToken);
-      }
-    );
-
-    // Load initial token
-    tokenRepo
-      .getCurrentToken(appointment.doctorId, appointment.clinicId)
-      .then(setToken);
-
-    return () => {
-      unsubscribe();
-    };
-  }, [appointment]);
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       setIsLoading(true);
       const appointmentRepo = RepositoryFactory.getAppointmentRepository();
@@ -70,19 +42,49 @@ export default function AppointmentDetailsPage() {
 
       setAppointment(appointmentData);
 
-      const [doctorData, clinicData] = await Promise.all([
-        clinicRepo.getDoctorById(appointmentData.doctorId),
-        clinicRepo.getClinicById(appointmentData.clinicId),
-      ]);
+      // Load doctor information
+      const doctorData = await clinicRepo.getDoctorById(appointmentData.doctorId);
+      
+      if (!doctorData) {
+        setError("Doctor not found");
+        return;
+      }
 
       setDoctor(doctorData);
-      setClinic(clinicData);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load appointment");
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [appointmentId]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  // useEffect(() => {
+  //   if (!appointment) return;
+
+  //   const tokenRepo = RepositoryFactory.getTokenRepository();
+  //   const clinicId = "virtual-clinic"; // Use virtual clinic ID
+    
+  //   const unsubscribe = tokenRepo.subscribeToTokenUpdates(
+  //     appointment.doctorId,
+  //     clinicId,
+  //     (updatedToken) => {
+  //       setToken(updatedToken);
+  //     }
+  //   );
+
+  //   // Load initial token
+  //   tokenRepo
+  //     .getCurrentToken(appointment.doctorId, clinicId)
+  //     .then(setToken);
+
+  //   return () => {
+  //     unsubscribe();
+  //   };
+  // }, [appointment]);
 
   const getStatusBadge = (status: AppointmentStatus) => {
     switch (status) {
@@ -124,7 +126,7 @@ export default function AppointmentDetailsPage() {
     );
   }
 
-  if (error || !appointment || !doctor || !clinic) {
+  if (error || !appointment || !doctor) {
     return (
       <div className="flex flex-col min-h-screen">
         <Header />
@@ -231,13 +233,15 @@ export default function AppointmentDetailsPage() {
                     })}
                   </p>
                 </div>
-                <div>
-                  <p className="text-sm text-gray-500">Time</p>
-                  <p className="font-semibold text-gray-900">
-                    {appointment.timeSlot.startTime} -{" "}
-                    {appointment.timeSlot.endTime}
-                  </p>
-                </div>
+                {appointment.timeSlot.startTime && (
+                  <div>
+                    <p className="text-sm text-gray-500">Time</p>
+                    <p className="font-semibold text-gray-900">
+                      {appointment.timeSlot.startTime}
+                      {appointment.timeSlot.endTime && ` - ${appointment.timeSlot.endTime}`}
+                    </p>
+                  </div>
+                )}
                 <div>
                   <p className="text-sm text-gray-500">Status</p>
                   <div className="mt-1">{getStatusBadge(appointment.status)}</div>
@@ -276,16 +280,38 @@ export default function AppointmentDetailsPage() {
             </Card>
           </div>
 
-          <Card className="mt-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">
-              Clinic Information
-            </h3>
-            <div className="space-y-2">
-              <p className="font-semibold text-gray-900">{clinic.name}</p>
-              <p className="text-sm text-gray-600">{clinic.address}</p>
-              <p className="text-sm text-gray-600">{clinic.phone}</p>
-            </div>
-          </Card>
+          {/* Patient Information */}
+          {appointment.patientName && (
+            <Card className="mt-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                Patient Information
+              </h3>
+              <div className="space-y-3">
+                <div>
+                  <p className="text-sm text-gray-500">Name</p>
+                  <p className="font-semibold text-gray-900">{appointment.patientName}</p>
+                </div>
+                {appointment.patientPhone && (
+                  <div>
+                    <p className="text-sm text-gray-500">Phone</p>
+                    <p className="font-semibold text-gray-900">{appointment.patientPhone}</p>
+                  </div>
+                )}
+                {appointment.patientAge && (
+                  <div>
+                    <p className="text-sm text-gray-500">Age</p>
+                    <p className="font-semibold text-gray-900">{appointment.patientAge} years</p>
+                  </div>
+                )}
+                {appointment.patientGender && (
+                  <div>
+                    <p className="text-sm text-gray-500">Gender</p>
+                    <p className="font-semibold text-gray-900 capitalize">{appointment.patientGender}</p>
+                  </div>
+                )}
+              </div>
+            </Card>
+          )}
         </div>
       </main>
       <Footer />

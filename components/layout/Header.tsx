@@ -71,7 +71,7 @@ export const Header: React.FC<HeaderProps> = ({ user, onLogout }) => {
                 )}
               </>
             ) : (
-              <Link href="/auth/login">
+              <Link href="/login">
                 <Button variant="primary" size="sm">
                   Login
                 </Button>
