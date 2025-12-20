@@ -3,21 +3,83 @@
 @tailwind utilities;
 
 :root {
-  --foreground-rgb: 0, 0, 0;
+  --foreground-rgb: 17, 24, 39;
   --background-start-rgb: 255, 255, 255;
   --background-end-rgb: 255, 255, 255;
+  --font-poppins: var(--font-poppins);
+  --font-playfair: var(--font-playfair);
+
+  /* Theme Colors */
+  --color-primary: 16, 185, 129; /* emerald-500 */
+  --color-secondary: 20, 184, 166; /* teal-500 */
+  --color-accent: 245, 158, 11; /* amber-500 */
 }
 
 body {
   color: rgb(var(--foreground-rgb));
-  background: linear-gradient(to bottom, transparent, rgb(var(--background-end-rgb))) rgb(var(--background-start-rgb));
+  background: rgb(var(--background-start-rgb));
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  font-family: var(--font-poppins), sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 #__next {
   flex: 1;
   display: flex;
   flex-direction: column;
+}
+
+.font-display {
+  font-family: var(--font-playfair), serif;
+}
+
+/* Global Design System Classes */
+@layer components {
+  /* Section Container */
+  .section-container {
+    @apply max-w-7xl mx-auto px-6 sm:px-8 lg:px-10;
+  }
+
+  /* Section Title */
+  .section-title {
+    @apply font-display text-5xl md:text-6xl font-bold text-gray-900 mb-6;
+  }
+
+  /* Section Subtitle */
+  .section-subtitle {
+    @apply text-xl text-gray-600 max-w-2xl mx-auto font-light;
+  }
+
+  /* Gradient Card */
+  .gradient-card {
+    @apply p-10 rounded-3xl bg-gradient-to-br border-2 transition-all duration-300 transform hover:-translate-y-3;
+  }
+
+  /* Feature Card */
+  .feature-card {
+    @apply p-10 rounded-3xl bg-gradient-to-br border-2 hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-3;
+  }
+
+  /* Primary Button Style */
+  .btn-primary-large {
+    @apply text-lg px-14 py-6 rounded-2xl font-bold shadow-2xl transition-all duration-300 transform hover:scale-105 hover:-translate-y-1;
+  }
+
+  /* Hero Gradient Background */
+  .hero-gradient {
+    @apply bg-gradient-to-br from-emerald-500 via-teal-600 to-cyan-600;
+  }
+
+  /* Section Gradient Background */
+  .section-gradient-light {
+    @apply bg-gradient-to-b from-white to-emerald-50/30;
+  }
+
+  /* Dark Section Background */
+  .section-dark {
+    @apply bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900;
+  }
 }

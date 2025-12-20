@@ -14,10 +14,10 @@ export const Card: React.FC<CardProps> = ({
   hover = false,
 }) => {
   const baseStyles =
-    "bg-white rounded-xl shadow-sm border border-gray-100 p-6";
+    "bg-white rounded-3xl shadow-lg border-2 border-gray-100 p-6";
 
   const hoverStyles = hover
-    ? "transition-all duration-200 hover:shadow-md hover:border-primary-200 cursor-pointer"
+    ? "transition-all duration-300 hover:shadow-2xl hover:border-emerald-300 hover:-translate-y-1 cursor-pointer"
     : "";
 
   const clickStyles = onClick ? "cursor-pointer" : "";

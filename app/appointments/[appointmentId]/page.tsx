@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -148,7 +148,7 @@ export default function AppointmentDetailsPage() {
   return (
     <div className="flex flex-col min-h-screen">
       <Header />
-      <main className="flex-1 bg-gray-50 py-12 px-4">
+      <main className="flex-1 bg-gray-50 py-4 px-4">
         <div className="max-w-4xl mx-auto">
           <div className="mb-8">
             <Button
@@ -167,7 +167,7 @@ export default function AppointmentDetailsPage() {
           {/* Token Status Card */}
           <Card className="mb-6 bg-gradient-to-br from-primary-50 to-secondary-50 border-primary-200">
             <div className="text-center">
-              <div className="mb-4">
+              <div className="mb-6">
                 <p className="text-sm text-gray-600 mb-2">Your Token Number</p>
                 <div className="text-6xl font-bold text-primary-600 mb-2">
                   {appointment.tokenNumber}
@@ -175,41 +175,122 @@ export default function AppointmentDetailsPage() {
                 {getStatusBadge(appointment.status)}
               </div>
 
-              {token && (
+              {token ? (
                 <div className="mt-6 pt-6 border-t border-primary-200">
-                  <div className="grid grid-cols-2 gap-4 text-center">
-                    <div>
-                      <p className="text-sm text-gray-600 mb-1">
-                        Currently Serving
-                      </p>
-                      <p className="text-2xl font-bold text-gray-900">
+                  {/* Progress Bar */}
+                  <div className="mb-6">
+                    <div className="flex items-center justify-between mb-2 px-2">
+                      <span className="text-xs text-gray-600 font-medium">Queue Progress</span>
+                      <span className="text-xs text-primary-600 font-semibold">
+                        {tokensAhead === 0 ? "Your Turn!" : `${tokensAhead} ahead`}
+                      </span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden">
+                      <div 
+                        className="h-full bg-gradient-to-r from-primary-500 to-secondary-500 transition-all duration-500 ease-out rounded-full"
+                        style={{ 
+                          width: `${Math.max(0, Math.min(100, ((appointment.tokenNumber - token.currentToken) / Math.max(appointment.tokenNumber, 1)) * 100))}%` 
+                        }}
+                      ></div>
+                    </div>
+                  </div>
+
+                  {/* Token Tracking Stats */}
+                  <div className="grid grid-cols-2 gap-4 mb-6">
+                    <div className="p-4 bg-white/80 rounded-xl border border-primary-100">
+                      <div className="flex items-center justify-center gap-2 mb-2">
+                        <svg className="w-5 h-5 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                        </svg>
+                        <p className="text-xs text-gray-600 font-medium">Currently Serving</p>
+                      </div>
+                      <p className="text-3xl font-bold text-primary-600">
                         {token.currentToken}
                       </p>
                     </div>
-                    <div>
-                      <p className="text-sm text-gray-600 mb-1">Tokens Ahead</p>
-                      <p className="text-2xl font-bold text-gray-900">
-                        {tokensAhead}
+                    <div className="p-4 bg-white/80 rounded-xl border border-primary-100">
+                      <div className="flex items-center justify-center gap-2 mb-2">
+                        <svg className="w-5 h-5 text-secondary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                        </svg>
+                        <p className="text-xs text-gray-600 font-medium">Your Position</p>
+                      </div>
+                      <p className="text-3xl font-bold text-secondary-600">
+                        #{appointment.tokenNumber}
                       </p>
                     </div>
                   </div>
 
+                  {/* Detailed Tracking Info */}
+                  <div className="grid grid-cols-2 gap-4 mb-6">
+                    <div className="p-3 bg-white/60 rounded-lg border border-primary-100">
+                      <p className="text-xs text-gray-500 mb-1">Tokens Ahead</p>
+                      <p className="text-2xl font-bold text-gray-900">
+                        {tokensAhead}
+                      </p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        {tokensAhead === 0 ? "You're next!" : tokensAhead === 1 ? "token" : "tokens"}
+                      </p>
+                    </div>
+                    <div className="p-3 bg-white/60 rounded-lg border border-primary-100">
+                      <p className="text-xs text-gray-500 mb-1">Estimated Wait</p>
+                      <p className="text-2xl font-bold text-gray-900">
+                        {estimatedWait}
+                      </p>
+                      <p className="text-xs text-gray-500 mt-1">minutes</p>
+                    </div>
+                  </div>
+
+                  {/* Status Message */}
                   {isYourTurn ? (
-                    <div className="mt-6 p-4 bg-secondary-100 rounded-lg">
-                      <p className="text-lg font-semibold text-secondary-800">
-                        🎉 It`s your turn! Please proceed to Room {doctor.roomNumber}
+                    <div className="mt-6 p-5 bg-gradient-to-r from-secondary-500 to-primary-500 rounded-xl shadow-lg border-2 border-secondary-300">
+                      <div className="flex items-center justify-center gap-3 mb-2">
+                        <svg className="w-6 h-6 text-white animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <p className="text-xl font-bold text-white">It&apos;s Your Turn!</p>
+                      </div>
+                      <p className="text-base text-white/90 font-medium">
+                        Please proceed to <span className="font-bold">Room {doctor.roomNumber}</span>
                       </p>
                     </div>
                   ) : (
-                    <div className="mt-6">
-                      <p className="text-sm text-gray-600 mb-1">
-                        Estimated Wait Time
-                      </p>
-                      <p className="text-xl font-semibold text-gray-900">
+                    <div className="mt-6 p-4 bg-amber-50 rounded-xl border-2 border-amber-200">
+                      <div className="flex items-center justify-center gap-2 mb-2">
+                        <svg className="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <p className="text-sm font-semibold text-amber-800">Waiting in Queue</p>
+                      </div>
+                      <p className="text-lg font-bold text-amber-900 mb-1">
                         {estimatedWait} minutes
+                      </p>
+                      <p className="text-xs text-amber-700">
+                        Approximately {Math.ceil(estimatedWait / 15)} {Math.ceil(estimatedWait / 15) === 1 ? 'patient' : 'patients'} ahead
                       </p>
                     </div>
                   )}
+
+                  {/* Additional Info */}
+                  <div className="mt-6 pt-4 border-t border-primary-100">
+                    <div className="flex items-center justify-center gap-4 text-xs text-gray-500">
+                      <div className="flex items-center gap-1">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span>Last updated: {new Date().toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="mt-6 pt-6 border-t border-primary-200">
+                  <div className="p-4 bg-white/60 rounded-lg border border-primary-100">
+                    <p className="text-sm text-gray-600 mb-2">Token tracking not available</p>
+                    <p className="text-xs text-gray-500">
+                      Real-time tracking will begin when your appointment starts
+                    </p>
+                  </div>
                 </div>
               )}
             </div>

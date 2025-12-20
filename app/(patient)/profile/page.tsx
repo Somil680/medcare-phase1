@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -76,7 +76,7 @@ export default function ProfilePage() {
   return (
     <div className="flex flex-col min-h-screen">
       <Header user={user} onLogout={handleLogout} />
-      <main className="flex-1 bg-gray-50 py-12 px-4">
+      <main className="flex-1 bg-gray-50 py-4 px-4">
         <div className="max-w-4xl mx-auto">
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-gray-900 mb-2">Profile</h1>

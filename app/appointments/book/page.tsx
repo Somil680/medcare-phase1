@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback } from "react";
+import type { ChangeEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -117,7 +118,6 @@ export default function BookAppointmentPage() {
       // Check if user is authenticated (for linking to user account)
       const authRepo = RepositoryFactory.getAuthRepository();
       const isAuth = await authRepo.isAuthenticated();
-      console.log("🚀 ~ confirmBooking ~ isAuth:", isAuth)
       let userId = "guest";
 
       if (isAuth) {
@@ -147,7 +147,6 @@ export default function BookAppointmentPage() {
         appointmentMode: "token",
       });
       
-      console.log("🚀 ~ confirmBooking ~ appointment:", appointment)
       // Store appointment ID and token number for navigation
       setAppointmentId(appointment.id);
       setTokenNumber(appointment.tokenNumber);
@@ -203,7 +202,7 @@ export default function BookAppointmentPage() {
   }
 
   const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
+    e: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
   ) => {
     const { name, value } = e.target;
     setPatientDetails((prev) => ({
@@ -215,7 +214,7 @@ export default function BookAppointmentPage() {
   return (
     <div className="flex flex-col min-h-screen">
       <Header />
-      <main className="flex-1 bg-gray-50 py-12 px-4">
+      <main className="flex-1 bg-gray-50 py-4 px-4">
         <div className="max-w-4xl mx-auto">
           <div className="mb-8">
             <Button

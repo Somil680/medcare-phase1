@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Card } from "@/components/ui/Card";
@@ -18,7 +18,6 @@ export default function DashboardPage() {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
-  console.log("🚀 ~ DashboardPage ~ appointments:", appointments)
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -39,14 +38,11 @@ export default function DashboardPage() {
       }
 
       setUser(currentUser);
-      console.log("🚀 ~ DashboardPage ~ currentUser:", currentUser)
 
       const appointmentRepo = RepositoryFactory.getAppointmentRepository();
-      console.log("🚀 ~ DashboardPage ~ appointmentRepo:", appointmentRepo)
       const userAppointments = await appointmentRepo.getAppointmentsByUser(
         currentUser.id
       );
-      console.log("🚀 ~ DashboardPage ~ userAppointments:", userAppointments)
       setAppointments(userAppointments);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load dashboard");
@@ -77,13 +73,11 @@ export default function DashboardPage() {
   const upcomingAppointments = appointments.filter(
     (a) => a.status === AppointmentStatus.UPCOMING
   );
-  console.log("🚀 ~ DashboardPage ~ upcomingAppointments:", upcomingAppointments)
   const pastAppointments = appointments.filter(
     (a) =>
       a.status === AppointmentStatus.COMPLETED ||
       a.status === AppointmentStatus.CANCELLED
   );
-  console.log("🚀 ~ DashboardPage ~ pastAppointments:", pastAppointments)
 
   if (isLoading) {
     return (
@@ -115,7 +109,7 @@ export default function DashboardPage() {
   return (
     <div className="flex flex-col min-h-screen">
       <Header user={user || undefined} />
-      <main className="flex-1 bg-gray-50 py-12 px-4">
+      <main className="flex-1 bg-gray-50 py-4 px-4">
         <div className="max-w-7xl mx-auto">
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-gray-900 mb-2">
